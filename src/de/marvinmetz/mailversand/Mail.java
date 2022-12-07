@@ -3,22 +3,22 @@ package de.marvinmetz.mailversand;
 import java.io.File;
 import java.util.Properties;
 
-import javax.activation.DataHandler;
-import javax.activation.FileDataSource;
-import javax.mail.BodyPart;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-
 import de.marvinmetz.mailversand.PropertiesM.SMTPData;
+import jakarta.activation.DataHandler;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.Authenticator;
+import jakarta.mail.BodyPart;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 
 public class Mail {
 
@@ -30,9 +30,10 @@ public class Mail {
 		this.multipart = new MimeMultipart();
 	}
 
-	public void fillHeader(InternetAddress from, InternetAddress internetAddress, String subj) throws AddressException, MessagingException {
+	public void fillHeader(InternetAddress from, InternetAddress internetAddress, String subj, InternetAddress bcc) throws AddressException, MessagingException {
 		this.message.setFrom(from);
 		this.message.setRecipient(Message.RecipientType.TO, internetAddress);
+		this.message.setRecipient(Message.RecipientType.BCC, bcc);
 		this.message.setSubject(subj);
 	}
 
@@ -75,7 +76,7 @@ public class Mail {
 		}
 
 		// Get the Session object.
-		Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+		Session session = Session.getInstance(props, new Authenticator() {
 			@Override
 			protected PasswordAuthentication getPasswordAuthentication() {
 				return new PasswordAuthentication(data.getUser(), data.getPassword());

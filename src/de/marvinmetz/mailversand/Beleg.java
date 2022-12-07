@@ -1,6 +1,6 @@
 package de.marvinmetz.mailversand;
 
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 
 public class Beleg {
 	String   belegnummer;

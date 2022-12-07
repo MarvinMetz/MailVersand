@@ -1,18 +1,20 @@
 package de.marvinmetz.mailversand;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Level;
-
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 
 public class CSV{
 
@@ -22,7 +24,7 @@ public class CSV{
 	
 	public CSV(String path){
 		this.list = new ArrayList<>();
-		try (Reader file = new FileReader(path);) {
+		try (Reader file = new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8);) {
 			MailVersand.log.log(Level.FINE, "Importdatei gefunden.");
 			this.records = new CSVParser(file, CSVFormat.DEFAULT.withDelimiter(';').withHeader());
 			MailVersand.log.log(Level.FINE, "Importdatei gelesen.");

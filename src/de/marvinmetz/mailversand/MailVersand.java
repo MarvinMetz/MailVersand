@@ -2,6 +2,7 @@ package de.marvinmetz.mailversand;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,8 +12,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.mail.MessagingException;
-import javax.mail.Session;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
 
 public class MailVersand {
 
@@ -42,17 +43,17 @@ public class MailVersand {
 		MailVersand.log.log(Level.INFO, "Alle Mails wurden versandt.");
 	}
 
-	static final String  PATTERN = "yyyyMMdd";
-	static boolean       debug   = false;
-	static boolean       test    = false;
-	static boolean       testV   = false;
+	static final String PATTERN = "yyyyMMdd";
+	static boolean debug = false;
+	static boolean test = false;
+	static boolean testV = false;
 
 	public static Logger log;
 
-	PropertiesM          prop;
-	ArrayList<Beleg>     belege;
+	PropertiesM prop;
+	ArrayList<Beleg> belege;
 
-	int                  mailStatus;
+	int mailStatus;
 
 	public MailVersand() {
 		this.prop = new PropertiesM();
@@ -62,14 +63,20 @@ public class MailVersand {
 	private static void createLogger() {
 		MailVersand.log = Logger.getLogger("Log");
 
-		File path = new File(PropertiesM.getUserDataDirectory() + "Logs" + File.separator);
+		File path = new File(MailVersand.getFilePath() + File.separator + "Logs" + File.separator);
 		if (!path.exists() || !path.isDirectory())
 			path.mkdirs();
 
 		DateFormat df = new SimpleDateFormat(PATTERN);
 		Date today = Calendar.getInstance().getTime();
 		try {
-			FileHandler fh = new FileHandler(path.getPath() + File.separator + "" + df.format(today) + ".log", true);
+			String pa;
+			int roll = 0;
+			do {
+				pa = path.getPath() + File.separator + "" + df.format(today) + "_" + roll + ".log";
+				roll++;
+			} while (new File(pa).exists());
+			FileHandler fh = new FileHandler(pa, false);
 			LogFormatter fm = new LogFormatter();
 			fh.setFormatter(fm);
 			log.addHandler(fh);
@@ -104,23 +111,24 @@ public class MailVersand {
 		MailVersand.log.log(Level.FINE, "Mail Session erzeugt.");
 		try {
 			for (Beleg b : belegeI) {
-				MailVersand.log.log(Level.FINEST, "Bereite Mail für " + b.belegnummer + " vor.");
+				MailVersand.log.log(Level.FINEST, "Bereite Mail fÃ¼r " + b.belegnummer + " vor.");
 				Mail m = new Mail(session);
-				m.fillHeader(getProperties().getSMTPData().getMail(), b.getMail(), fitt(getProperties().getSubject(), b));
-				MailVersand.log.log(Level.FINEST, "Kopfdaten für " + b.belegnummer + " gefüllt.");
+				m.fillHeader(getProperties().getSMTPData().getMail(), b.getMail(),
+						fitt(getProperties().getSubject(), b), getProperties().getSMTPData().getBcc());
+				MailVersand.log.log(Level.FINEST, "Kopfdaten fÃ¼r " + b.belegnummer + " gefÃ¼llt.");
 				m.addBodyText(fitt(getProperties().getTemplate(), b));
-				MailVersand.log.log(Level.FINEST, "Mail Inhalt für " + b.belegnummer + " gefüllt.");
-				if(!b.getBelegFile().equals("")) {
+				MailVersand.log.log(Level.FINEST, "Mail Inhalt fÃ¼r " + b.belegnummer + " gefÃ¼llt.");
+				if (!b.getBelegFile().equals("")) {
 					File atta = new File(getProperties().getAttachmentPath() + b.getBelegFile());
 					if (atta.exists() && !atta.isDirectory()) {
 						m.addAttachment(atta);
-						MailVersand.log.log(Level.FINEST, "Anhang für " + b.belegnummer + " gefüllt.");
+						MailVersand.log.log(Level.FINEST, "Anhang fÃ¼r " + b.belegnummer + " gefÃ¼llt.");
 					} else {
-						MailVersand.log.log(Level.WARNING, "Kein Anhang für " + b.belegnummer + " gefunden.");
+						MailVersand.log.log(Level.WARNING, "Kein Anhang fÃ¼r " + b.belegnummer + " gefunden.");
 					}
 				}
 				m.send();
-				MailVersand.log.log(Level.INFO, "Mail für " + b.belegnummer + " versandt.");
+				MailVersand.log.log(Level.INFO, "Mail fÃ¼r " + b.belegnummer + " versandt.");
 			}
 		} catch (MessagingException e) {
 			MailVersand.log.log(Level.SEVERE, "Fehler beim Versand von Mails:", e);
@@ -140,4 +148,15 @@ public class MailVersand {
 		fitted = fitted.replace("%vorname%", b.getVorname());
 		return fitted;
 	}
+
+	public static String getFilePath() {
+		try {
+			return new File(MailVersand.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+					.getParentFile().getPath();
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 }
